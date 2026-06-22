@@ -7,8 +7,10 @@ import { TaskTable } from "@/components/tasks/task-table"
 import { TaskKanban } from "@/components/tasks/task-kanban"
 import { TaskCalendar } from "@/components/tasks/task-calendar"
 import { CreateTaskDialog } from "@/components/tasks/create-task-dialog"
+import { Button } from "@/components/ui/button"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { CheckSquare, LayoutGrid, Calendar } from "lucide-react"
+import { CheckSquare, LayoutGrid, Calendar, Plus } from "lucide-react"
+import Link from "next/link"
 
 async function getTasks() {
   try {
@@ -66,7 +68,15 @@ export default async function TasksPage() {
             Manage and track your team's tasks
           </p>
         </div>
-        <CreateTaskDialog partners={partnerList} />
+        <div className="flex items-center gap-2">
+          <CreateTaskDialog partners={partnerList} />
+          <Button asChild>
+            <Link href="/tasks/new">
+              <Plus className="mr-2 h-4 w-4" />
+              New Task
+            </Link>
+          </Button>
+        </div>
       </div>
 
       <Tabs defaultValue="table" className="space-y-4">
