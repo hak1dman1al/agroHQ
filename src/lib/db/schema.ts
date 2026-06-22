@@ -201,3 +201,140 @@ export const activitiesRelations = relations(activities, ({ one }) => ({
     references: [users.id],
   }),
 }))
+
+// ============================================
+// Phase 2: Vision & Mission, Meetings, Progress Updates
+// ============================================
+
+// Vision & Mission
+export const visionSections = pgTable("vision_sections", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  title: text("title").notNull(),
+  content: text("content").notNull(),
+  type: text("type").notNull(), // why_agro, mission, vision, core_values, long_term_goals
+  orderIndex: integer("order_index").notNull().default(0),
+  createdBy: text("created_by").notNull().references(() => users.id),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+  updatedAt: timestamp("updated_at").notNull().defaultNow(),
+})
+
+// Meetings
+export const meetings = pgTable("meetings", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  title: text("title").notNull(),
+  date: timestamp("date").notNull(),
+  agenda: text("agenda"),
+  discussion: text("discussion"),
+  decisions: text("decisions"),
+  createdBy: text("created_by").notNull().references(() => users.id),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+  updatedAt: timestamp("updated_at").notNull().defaultNow(),
+})
+
+export const meetingParticipants = pgTable("meeting_participants", {
+  meetingId: uuid("meeting_id").notNull().references(() => meetings.id, { onDelete: "cascade" }),
+  userId: text("user_id").notNull().references(() => users.id),
+})
+
+export const meetingActions = pgTable("meeting_actions", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  meetingId: uuid("meeting_id").notNull().references(() => meetings.id, { onDelete: "cascade" }),
+  title: text("title").notNull(),
+  assigneeId: uuid("assignee_id").references(() => partners.id),
+  status: statusEnum("status").notNull().default("todo"),
+  dueDate: timestamp("due_date"),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+})
+
+// Progress Updates
+export const progressUpdates = pgTable("progress_updates", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  userId: text("user_id").notNull().references(() => users.id),
+  content: text("content").notNull(),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+  updatedAt: timestamp("updated_at").notNull().defaultNow(),
+})
+
+export const progressAttachments = pgTable("progress_attachments", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  updateId: uuid("update_id").notNull().references(() => progressUpdates.id, { onDelete: "cascade" }),
+  filename: text("filename").notNull(),
+  mimeType: text("mime_type").notNull(),
+  size: integer("size").notNull(),
+  minioKey: text("minio_key").notNull(),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+})
+
+export const progressReactions = pgTable("progress_reactions", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  updateId: uuid("update_id").notNull().references(() => progressUpdates.id, { onDelete: "cascade" }),
+  userId: text("user_id").notNull().references(() => users.id),
+  emoji: text("emoji").notNull(),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+})
+
+// Phase 2 Relations
+export const visionSectionsRelations = relations(visionSections, ({ one }) => ({
+  creator: one(users, {
+    fields: [visionSections.createdBy],
+    references: [users.id],
+  }),
+}))
+
+export const meetingsRelations = relations(meetings, ({ one, many }) => ({
+  creator: one(users, {
+    fields: [meetings.createdBy],
+    references: [users.id],
+  }),
+  participants: many(meetingParticipants),
+  actions: many(meetingActions),
+}))
+
+export const meetingParticipantsRelations = relations(meetingParticipants, ({ one }) => ({
+  meeting: one(meetings, {
+    fields: [meetingParticipants.meetingId],
+    references: [meetings.id],
+  }),
+  user: one(users, {
+    fields: [meetingParticipants.userId],
+    references: [users.id],
+  }),
+}))
+
+export const meetingActionsRelations = relations(meetingActions, ({ one }) => ({
+  meeting: one(meetings, {
+    fields: [meetingActions.meetingId],
+    references: [meetings.id],
+  }),
+  assignee: one(partners, {
+    fields: [meetingActions.assigneeId],
+    references: [partners.id],
+  }),
+}))
+
+export const progressUpdatesRelations = relations(progressUpdates, ({ one, many }) => ({
+  user: one(users, {
+    fields: [progressUpdates.userId],
+    references: [users.id],
+  }),
+  attachments: many(progressAttachments),
+  reactions: many(progressReactions),
+}))
+
+export const progressAttachmentsRelations = relations(progressAttachments, ({ one }) => ({
+  update: one(progressUpdates, {
+    fields: [progressAttachments.updateId],
+    references: [progressUpdates.id],
+  }),
+}))
+
+export const progressReactionsRelations = relations(progressReactions, ({ one }) => ({
+  update: one(progressUpdates, {
+    fields: [progressReactions.updateId],
+    references: [progressUpdates.id],
+  }),
+  user: one(users, {
+    fields: [progressReactions.userId],
+    references: [users.id],
+  }),
+}))

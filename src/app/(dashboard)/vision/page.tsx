@@ -1,11 +1,22 @@
-import { ComingSoon } from "@/components/empty-states/coming-soon"
+export const dynamic = "force-dynamic"
 
-export default function VisionPage() {
-  return (
-    <ComingSoon
-      title="Vision & Mission"
-      description="Store your company philosophy, mission, vision, and core values"
-      phase="Phase 2"
-    />
-  )
+import { db } from "@/lib/db/client"
+import { visionSections } from "@/lib/db/schema"
+import { asc } from "drizzle-orm"
+import { VisionPage } from "@/components/vision/vision-page"
+
+async function getSections() {
+  try {
+    return await db
+      .select()
+      .from(visionSections)
+      .orderBy(asc(visionSections.orderIndex))
+  } catch {
+    return []
+  }
+}
+
+export default async function VisionMissionPage() {
+  const sections = await getSections()
+  return <VisionPage sections={sections} />
 }

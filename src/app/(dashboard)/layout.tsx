@@ -3,6 +3,7 @@
 import { useState } from "react"
 import { Sidebar } from "@/components/layout/sidebar"
 import { Header } from "@/components/layout/header"
+import { CommandPalette } from "@/components/layout/command-palette"
 import { cn } from "@/lib/utils"
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet"
 import { Button } from "@/components/ui/button"
@@ -31,6 +32,7 @@ export default function DashboardLayout({
 }) {
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false)
   const [mobileOpen, setMobileOpen] = useState(false)
+  const [commandPaletteOpen, setCommandPaletteOpen] = useState(false)
   const pathname = usePathname()
 
   const title = pageTitles[pathname] || "Agro HQ"
@@ -73,6 +75,11 @@ export default function DashboardLayout({
         <Header title={title} onMenuClick={() => setMobileOpen(true)} />
         <main className="p-4 lg:p-6">{children}</main>
       </div>
+
+      <CommandPalette
+        open={commandPaletteOpen}
+        onOpenChange={setCommandPaletteOpen}
+      />
     </div>
   )
 }
