@@ -26,14 +26,18 @@ export async function getSession(request: NextRequest): Promise<Session | null> 
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl
   
+  // Skip middleware for static files, API auth routes, and Next.js internals
+  if (
+    pathname.startsWith("/_next") ||
+    pathname.startsWith("/api/auth") ||
+    pathname.includes(".") // static files
+  ) {
+    return NextResponse.next()
+  }
+  
   // Public routes
   const publicRoutes = ["/login", "/setup", "/invite"]
   const isPublicRoute = publicRoutes.some(route => pathname.startsWith(route))
-  
-  // API auth routes
-  if (pathname.startsWith("/api/auth")) {
-    return NextResponse.next()
-  }
   
   const session = await getSession(request)
   
