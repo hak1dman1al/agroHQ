@@ -338,3 +338,185 @@ export const progressReactionsRelations = relations(progressReactions, ({ one })
     references: [users.id],
   }),
 }))
+
+// ============================================
+// Phase 3: Documents & Financial
+// ============================================
+
+// Document Folders
+export const documentFolders = pgTable("document_folders", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  name: text("name").notNull(),
+  parentId: uuid("parent_id"),
+  createdBy: text("created_by").notNull().references(() => users.id),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+})
+
+// Documents
+export const documents = pgTable("documents", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  folderId: uuid("folder_id").references(() => documentFolders.id),
+  title: text("title").notNull(),
+  filename: text("filename").notNull(),
+  mimeType: text("mime_type").notNull(),
+  size: integer("size").notNull(),
+  minioKey: text("minio_key").notNull(),
+  version: integer("version").notNull().default(1),
+  tags: text("tags"),
+  uploadedBy: text("uploaded_by").notNull().references(() => users.id),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+  updatedAt: timestamp("updated_at").notNull().defaultNow(),
+})
+
+// Financial - Capital Contributions
+export const capitalContributions = pgTable("capital_contributions", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  partnerId: uuid("partner_id").notNull().references(() => partners.id),
+  amount: integer("amount").notNull(), // stored in cents
+  date: timestamp("date").notNull(),
+  notes: text("notes"),
+  createdBy: text("created_by").notNull().references(() => users.id),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+})
+
+// Financial - Transactions
+export const financialTransactions = pgTable("financial_transactions", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  type: text("type").notNull(), // expense, revenue
+  category: text("category").notNull(),
+  amount: integer("amount").notNull(), // stored in cents
+  date: timestamp("date").notNull(),
+  description: text("description"),
+  createdBy: text("created_by").notNull().references(() => users.id),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+  updatedAt: timestamp("updated_at").notNull().defaultNow(),
+})
+
+// ============================================
+// Phase 4: Roadmap & Reports
+// ============================================
+
+// Roadmap
+export const roadmaps = pgTable("roadmaps", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  title: text("title").notNull(),
+  description: text("description"),
+  startDate: timestamp("start_date"),
+  endDate: timestamp("end_date"),
+  status: text("status").notNull().default("planned"), // planned, in_progress, completed, delayed
+  completionPercentage: integer("completion_percentage").notNull().default(0),
+  orderIndex: integer("order_index").notNull().default(0),
+  createdBy: text("created_by").notNull().references(() => users.id),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+  updatedAt: timestamp("updated_at").notNull().defaultNow(),
+})
+
+// Milestones
+export const milestones = pgTable("milestones", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  roadmapId: uuid("roadmap_id").notNull().references(() => roadmaps.id, { onDelete: "cascade" }),
+  title: text("title").notNull(),
+  description: text("description"),
+  isCompleted: boolean("is_completed").notNull().default(false),
+  orderIndex: integer("order_index").notNull().default(0),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+})
+
+// ============================================
+// Phase 5: Presentations
+// ============================================
+
+// Presentations
+export const presentations = pgTable("presentations", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  title: text("title").notNull(),
+  theme: text("theme").notNull().default("executive"),
+  shareToken: text("share_token"),
+  isPublic: boolean("is_public").notNull().default(false),
+  createdBy: text("created_by").notNull().references(() => users.id),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+  updatedAt: timestamp("updated_at").notNull().defaultNow(),
+})
+
+// Slides
+export const slides = pgTable("slides", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  presentationId: uuid("presentation_id").notNull().references(() => presentations.id, { onDelete: "cascade" }),
+  type: text("type").notNull(), // cover, section, text, bullet, kpi, timeline, roadmap, organization, comparison, cards, quote, image, gallery, table, financial, action_plan, swot, progress, meeting_summary, decision, risk, thank_you
+  layout: text("layout").notNull().default("center"), // hero, center, two_column, three_column, grid, sidebar, split, cards, timeline, dashboard, full_visual
+  title: text("title"),
+  subtitle: text("subtitle"),
+  mainMessage: text("main_message"),
+  contentJson: jsonb("content_json"),
+  orderIndex: integer("order_index").notNull().default(0),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+  updatedAt: timestamp("updated_at").notNull().defaultNow(),
+})
+
+// Phase 3-5 Relations
+export const documentFoldersRelations = relations(documentFolders, ({ one, many }) => ({
+  creator: one(users, {
+    fields: [documentFolders.createdBy],
+    references: [users.id],
+  }),
+  documents: many(documents),
+}))
+
+export const documentsRelations = relations(documents, ({ one }) => ({
+  folder: one(documentFolders, {
+    fields: [documents.folderId],
+    references: [documentFolders.id],
+  }),
+  uploader: one(users, {
+    fields: [documents.uploadedBy],
+    references: [users.id],
+  }),
+}))
+
+export const capitalContributionsRelations = relations(capitalContributions, ({ one }) => ({
+  partner: one(partners, {
+    fields: [capitalContributions.partnerId],
+    references: [partners.id],
+  }),
+  creator: one(users, {
+    fields: [capitalContributions.createdBy],
+    references: [users.id],
+  }),
+}))
+
+export const financialTransactionsRelations = relations(financialTransactions, ({ one }) => ({
+  creator: one(users, {
+    fields: [financialTransactions.createdBy],
+    references: [users.id],
+  }),
+}))
+
+export const roadmapsRelations = relations(roadmaps, ({ one, many }) => ({
+  creator: one(users, {
+    fields: [roadmaps.createdBy],
+    references: [users.id],
+  }),
+  milestones: many(milestones),
+}))
+
+export const milestonesRelations = relations(milestones, ({ one }) => ({
+  roadmap: one(roadmaps, {
+    fields: [milestones.roadmapId],
+    references: [roadmaps.id],
+  }),
+}))
+
+export const presentationsRelations = relations(presentations, ({ one, many }) => ({
+  creator: one(users, {
+    fields: [presentations.createdBy],
+    references: [users.id],
+  }),
+  slides: many(slides),
+}))
+
+export const slidesRelations = relations(slides, ({ one }) => ({
+  presentation: one(presentations, {
+    fields: [slides.presentationId],
+    references: [presentations.id],
+  }),
+}))
