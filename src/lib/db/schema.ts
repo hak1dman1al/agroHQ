@@ -91,9 +91,21 @@ export const tasks = pgTable("tasks", {
   priority: priorityEnum("priority").notNull().default("medium"),
   status: statusEnum("status").notNull().default("todo"),
   dueDate: timestamp("due_date"),
+  estimatedHours: integer("estimated_hours"),
+  actualHours: integer("actual_hours"),
   createdBy: text("created_by").notNull().references(() => users.id),
   createdAt: timestamp("created_at").notNull().defaultNow(),
   updatedAt: timestamp("updated_at").notNull().defaultNow(),
+})
+
+// Task subtasks / checklist items
+export const taskSubtasks = pgTable("task_subtasks", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  taskId: uuid("task_id").notNull().references(() => tasks.id, { onDelete: "cascade" }),
+  title: text("title").notNull(),
+  isCompleted: boolean("is_completed").notNull().default(false),
+  orderIndex: integer("order_index").notNull().default(0),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
 })
 
 export const taskComments = pgTable("task_comments", {
@@ -171,6 +183,14 @@ export const tasksRelations = relations(tasks, ({ one, many }) => ({
   }),
   comments: many(taskComments),
   attachments: many(taskAttachments),
+  subtasks: many(taskSubtasks),
+}))
+
+export const taskSubtasksRelations = relations(taskSubtasks, ({ one }) => ({
+  task: one(tasks, {
+    fields: [taskSubtasks.taskId],
+    references: [tasks.id],
+  }),
 }))
 
 export const taskCommentsRelations = relations(taskComments, ({ one }) => ({
@@ -223,6 +243,7 @@ export const meetings = pgTable("meetings", {
   id: uuid("id").primaryKey().defaultRandom(),
   title: text("title").notNull(),
   date: timestamp("date").notNull(),
+  location: text("location"),
   agenda: text("agenda"),
   discussion: text("discussion"),
   decisions: text("decisions"),
@@ -243,6 +264,17 @@ export const meetingActions = pgTable("meeting_actions", {
   assigneeId: uuid("assignee_id").references(() => partners.id),
   status: statusEnum("status").notNull().default("todo"),
   dueDate: timestamp("due_date"),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+})
+
+export const meetingAttachments = pgTable("meeting_attachments", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  meetingId: uuid("meeting_id").notNull().references(() => meetings.id, { onDelete: "cascade" }),
+  filename: text("filename").notNull(),
+  mimeType: text("mime_type").notNull(),
+  size: integer("size").notNull(),
+  minioKey: text("minio_key").notNull(),
+  uploadedBy: text("uploaded_by").notNull().references(() => users.id),
   createdAt: timestamp("created_at").notNull().defaultNow(),
 })
 
@@ -288,6 +320,7 @@ export const meetingsRelations = relations(meetings, ({ one, many }) => ({
   }),
   participants: many(meetingParticipants),
   actions: many(meetingActions),
+  attachments: many(meetingAttachments),
 }))
 
 export const meetingParticipantsRelations = relations(meetingParticipants, ({ one }) => ({
@@ -309,6 +342,17 @@ export const meetingActionsRelations = relations(meetingActions, ({ one }) => ({
   assignee: one(partners, {
     fields: [meetingActions.assigneeId],
     references: [partners.id],
+  }),
+}))
+
+export const meetingAttachmentsRelations = relations(meetingAttachments, ({ one }) => ({
+  meeting: one(meetings, {
+    fields: [meetingAttachments.meetingId],
+    references: [meetings.id],
+  }),
+  uploader: one(users, {
+    fields: [meetingAttachments.uploadedBy],
+    references: [users.id],
   }),
 }))
 

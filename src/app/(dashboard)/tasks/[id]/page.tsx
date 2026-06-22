@@ -1,8 +1,8 @@
 export const dynamic = "force-dynamic"
 
 import { db } from "@/lib/db/client"
-import { tasks, taskComments, taskAttachments, partners, users } from "@/lib/db/schema"
-import { eq, desc } from "drizzle-orm"
+import { tasks, taskComments, taskAttachments, taskSubtasks, partners, users } from "@/lib/db/schema"
+import { eq, desc, asc } from "drizzle-orm"
 import { notFound } from "next/navigation"
 import { TaskDetail } from "@/components/tasks/task-detail"
 
@@ -16,6 +16,8 @@ async function getTask(id: string) {
         priority: tasks.priority,
         status: tasks.status,
         dueDate: tasks.dueDate,
+        estimatedHours: tasks.estimatedHours,
+        actualHours: tasks.actualHours,
         createdAt: tasks.createdAt,
         updatedAt: tasks.updatedAt,
         assigneeId: tasks.assigneeId,
@@ -62,10 +64,17 @@ async function getTask(id: string) {
       .where(eq(taskAttachments.taskId, id))
       .orderBy(desc(taskAttachments.createdAt))
 
+    const subtasks = await db
+      .select()
+      .from(taskSubtasks)
+      .where(eq(taskSubtasks.taskId, id))
+      .orderBy(asc(taskSubtasks.orderIndex), asc(taskSubtasks.createdAt))
+
     return {
       ...task[0],
       comments,
       attachments,
+      subtasks,
     }
   } catch (error) {
     console.error("Failed to fetch task:", error)

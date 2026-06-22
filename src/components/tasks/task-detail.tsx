@@ -1,12 +1,13 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Textarea } from "@/components/ui/textarea"
+import { Input } from "@/components/ui/input"
 import {
   Select,
   SelectContent,
@@ -27,6 +28,9 @@ import {
   Loader2,
   Calendar,
   User,
+  CheckSquare,
+  Plus,
+  Clock,
 } from "lucide-react"
 import Link from "next/link"
 
@@ -49,6 +53,15 @@ interface Attachment {
   uploaderName: string
 }
 
+interface Subtask {
+  id: string
+  taskId: string
+  title: string
+  isCompleted: boolean
+  orderIndex: number
+  createdAt: Date
+}
+
 interface Task {
   id: string
   title: string
@@ -56,6 +69,8 @@ interface Task {
   priority: string
   status: string
   dueDate: Date | null
+  estimatedHours: number | null
+  actualHours: number | null
   createdAt: Date
   updatedAt: Date
   assigneeId: string | null
@@ -64,6 +79,7 @@ interface Task {
   creatorName: string
   comments: Comment[]
   attachments: Attachment[]
+  subtasks: Subtask[]
 }
 
 interface Partner {
@@ -90,6 +106,8 @@ export function TaskDetail({ task, partners }: { task: Task; partners: Partner[]
   const [comment, setComment] = useState("")
   const [loading, setLoading] = useState(false)
   const [status, setStatus] = useState(task.status)
+  const [subtasks, setSubtasks] = useState<Subtask[]>(task.subtasks || [])
+  const [newSubtaskTitle, setNewSubtaskTitle] = useState("")
   const router = useRouter()
   const { toast } = useToast()
 
@@ -209,6 +227,76 @@ export function TaskDetail({ task, partners }: { task: Task; partners: Partner[]
     } catch (error) {
       toast({
         title: "Download failed",
+        variant: "destructive",
+      })
+    }
+  }
+
+  async function handleAddSubtask(e: React.FormEvent) {
+    e.preventDefault()
+    if (!newSubtaskTitle.trim()) return
+
+    setLoading(true)
+    try {
+      const res = await fetch(`/api/tasks/${task.id}/subtasks`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ title: newSubtaskTitle }),
+      })
+
+      if (!res.ok) throw new Error("Failed to add subtask")
+
+      const newSubtask = await res.json()
+      setSubtasks([...subtasks, newSubtask])
+      setNewSubtaskTitle("")
+      router.refresh()
+      toast({ title: "Subtask added" })
+    } catch (error) {
+      toast({
+        title: "Failed to add subtask",
+        variant: "destructive",
+      })
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  async function handleToggleSubtask(subtaskId: string, isCompleted: boolean) {
+    try {
+      const res = await fetch(`/api/tasks/subtasks/${subtaskId}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ isCompleted: !isCompleted }),
+      })
+
+      if (!res.ok) throw new Error("Failed to toggle subtask")
+
+      setSubtasks(subtasks.map(s => 
+        s.id === subtaskId ? { ...s, isCompleted: !isCompleted } : s
+      ))
+      router.refresh()
+    } catch (error) {
+      toast({
+        title: "Failed to update subtask",
+        variant: "destructive",
+      })
+    }
+  }
+
+  async function handleDeleteSubtask(subtaskId: string) {
+    try {
+      const res = await fetch(`/api/tasks/subtasks/${subtaskId}`, {
+        method: "DELETE",
+      })
+
+      if (!res.ok) throw new Error("Failed to delete subtask")
+
+      setSubtasks(subtasks.filter(s => s.id !== subtaskId))
+      router.refresh()
+      toast({ title: "Subtask deleted" })
+    } catch (error) {
+      toast({
+        title: "Failed to delete subtask",
         variant: "destructive",
       })
     }
@@ -377,6 +465,69 @@ export function TaskDetail({ task, partners }: { task: Task; partners: Partner[]
               </div>
             </CardContent>
           </Card>
+
+          {/* Subtasks */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-lg flex items-center gap-2">
+                <CheckSquare className="h-5 w-5" />
+                Subtasks ({subtasks.filter(s => s.isCompleted).length}/{subtasks.length})
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              {subtasks.length > 0 ? (
+                <div className="space-y-2">
+                  {subtasks.map((subtask) => (
+                    <div
+                      key={subtask.id}
+                      className="flex items-center gap-3 p-3 rounded-lg border border-border hover:bg-muted/50 transition-colors group"
+                    >
+                      <input
+                        type="checkbox"
+                        checked={subtask.isCompleted}
+                        onChange={() => handleToggleSubtask(subtask.id, subtask.isCompleted)}
+                        className="w-4 h-4 rounded border-border"
+                      />
+                      <span
+                        className={cn(
+                          "flex-1 text-sm",
+                          subtask.isCompleted && "line-through text-muted-foreground"
+                        )}
+                      >
+                        {subtask.title}
+                      </span>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => handleDeleteSubtask(subtask.id)}
+                        className="opacity-0 group-hover:opacity-100 transition-opacity"
+                      >
+                        <Trash2 className="h-4 w-4 text-destructive" />
+                      </Button>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <p className="text-sm text-muted-foreground">No subtasks yet</p>
+              )}
+
+              <form onSubmit={handleAddSubtask} className="flex gap-2 pt-4 border-t">
+                <Input
+                  placeholder="Add a subtask..."
+                  value={newSubtaskTitle}
+                  onChange={(e) => setNewSubtaskTitle(e.target.value)}
+                  disabled={loading}
+                />
+                <Button type="submit" disabled={loading || !newSubtaskTitle.trim()}>
+                  {loading ? (
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                  ) : (
+                    <Plus className="h-4 w-4" />
+                  )}
+                </Button>
+              </form>
+            </CardContent>
+          </Card>
         </div>
 
         {/* Sidebar */}
@@ -445,6 +596,41 @@ export function TaskDetail({ task, partners }: { task: Task; partners: Partner[]
               <p className="text-sm font-medium">
                 {task.dueDate ? formatDate(task.dueDate) : "No due date"}
               </p>
+            </CardContent>
+          </Card>
+
+          {/* Time Tracking */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-sm font-medium text-muted-foreground flex items-center gap-2">
+                <Clock className="h-4 w-4" />
+                Time Tracking
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              <div>
+                <p className="text-xs text-muted-foreground">Estimated</p>
+                <p className="text-sm font-medium">
+                  {task.estimatedHours ? `${task.estimatedHours} hours` : "Not set"}
+                </p>
+              </div>
+              <div>
+                <p className="text-xs text-muted-foreground">Actual</p>
+                <p className="text-sm font-medium">
+                  {task.actualHours ? `${task.actualHours} hours` : "Not logged"}
+                </p>
+              </div>
+              {task.estimatedHours && task.actualHours && (
+                <div>
+                  <p className="text-xs text-muted-foreground">Status</p>
+                  <Badge
+                    variant={task.actualHours > task.estimatedHours ? "destructive" : "default"}
+                    className="text-xs"
+                  >
+                    {task.actualHours > task.estimatedHours ? "Over budget" : "On track"}
+                  </Badge>
+                </div>
+              )}
             </CardContent>
           </Card>
         </div>
