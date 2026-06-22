@@ -36,6 +36,9 @@ import {
   GripVertical,
   Sparkles,
   Eye,
+  Share2,
+  Download,
+  Link as LinkIcon,
 } from "lucide-react"
 import Link from "next/link"
 
@@ -189,6 +192,49 @@ export function PresentationEditor({ presentation }: { presentation: Presentatio
     }
   }
 
+  async function handleExport() {
+    setLoading(true)
+    try {
+      const res = await fetch(`/api/presentations/${presentation.id}/export`, {
+        method: "POST",
+      })
+      if (!res.ok) throw new Error("Failed")
+
+      const data = await res.json()
+      if (data.downloadUrl) {
+        window.open(data.downloadUrl, "_blank")
+        toast({ title: "Export successful" })
+      }
+    } catch {
+      toast({ title: "Export failed", variant: "destructive" })
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  async function handleToggleShare() {
+    setLoading(true)
+    try {
+      const res = await fetch(`/api/presentations/${presentation.id}/share`, {
+        method: "POST",
+      })
+      if (!res.ok) throw new Error("Failed")
+
+      const data = await res.json()
+      if (data.shareUrl) {
+        navigator.clipboard.writeText(data.shareUrl)
+        toast({
+          title: data.isPublic ? "Sharing enabled" : "Sharing disabled",
+          description: data.isPublic ? "Link copied to clipboard" : undefined,
+        })
+      }
+    } catch {
+      toast({ title: "Failed to toggle sharing", variant: "destructive" })
+    } finally {
+      setLoading(false)
+    }
+  }
+
   return (
     <div className="h-screen flex flex-col bg-background">
       {/* Header */}
@@ -248,6 +294,24 @@ export function PresentationEditor({ presentation }: { presentation: Presentatio
               </form>
             </DialogContent>
           </Dialog>
+
+          <Button variant="outline" size="sm" onClick={handleToggleShare} disabled={loading}>
+            {loading ? (
+              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+            ) : (
+              <Share2 className="mr-2 h-4 w-4" />
+            )}
+            Share
+          </Button>
+
+          <Button variant="outline" size="sm" onClick={handleExport} disabled={loading}>
+            {loading ? (
+              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+            ) : (
+              <Download className="mr-2 h-4 w-4" />
+            )}
+            Export
+          </Button>
 
           <Button asChild variant="outline" size="sm">
             <Link href={`/presentations/${presentation.id}/present`}>

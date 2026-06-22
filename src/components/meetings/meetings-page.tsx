@@ -87,20 +87,27 @@ export function MeetingsPage({ meetings }: { meetings: Meeting[] }) {
             Track meeting agendas, discussions, and action items
           </p>
         </div>
-        <Dialog open={open} onOpenChange={setOpen}>
-          <DialogTrigger asChild>
-            <Button>
+        <div className="flex items-center gap-2">
+          <Button asChild variant="outline">
+            <Link href="/meetings/new">
               <Plus className="mr-2 h-4 w-4" />
-              New Meeting
-            </Button>
-          </DialogTrigger>
-          <DialogContent className="sm:max-w-[500px]">
-            <DialogHeader>
-              <DialogTitle>Create Meeting</DialogTitle>
-              <DialogDescription>
-                Add a new meeting with agenda and details
-              </DialogDescription>
-            </DialogHeader>
+              Create Meeting
+            </Link>
+          </Button>
+          <Dialog open={open} onOpenChange={setOpen}>
+            <DialogTrigger asChild>
+              <Button>
+                <Plus className="mr-2 h-4 w-4" />
+                Quick Add
+              </Button>
+            </DialogTrigger>
+            <DialogContent className="sm:max-w-[500px]">
+              <DialogHeader>
+                <DialogTitle>Quick Create Meeting</DialogTitle>
+                <DialogDescription>
+                  Add a new meeting with basic details
+                </DialogDescription>
+              </DialogHeader>
             <form onSubmit={handleCreate} className="space-y-4">
               <div className="space-y-2">
                 <Label>Title</Label>

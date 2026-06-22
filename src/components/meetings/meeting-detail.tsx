@@ -37,6 +37,7 @@ import {
   Edit3,
   Save,
   Calendar,
+  Download,
 } from "lucide-react"
 import Link from "next/link"
 
@@ -152,6 +153,10 @@ export function MeetingDetail({ meeting, partners }: { meeting: Meeting; partner
     setEditValue(value || "")
   }
 
+  function handleExportICS() {
+    window.open(`/api/meetings/${meeting.id}/ics`, "_blank")
+  }
+
   return (
     <div className="space-y-6">
       {/* Header */}
@@ -168,6 +173,10 @@ export function MeetingDetail({ meeting, partners }: { meeting: Meeting; partner
             {formatDate(meeting.date)} • Created by {meeting.creatorName}
           </p>
         </div>
+        <Button variant="outline" size="sm" onClick={handleExportICS}>
+          <Download className="mr-2 h-4 w-4" />
+          Export to Calendar
+        </Button>
       </div>
 
       <div className="grid gap-6 lg:grid-cols-2">
