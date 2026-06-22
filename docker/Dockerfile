@@ -3,8 +3,8 @@ FROM node:20-alpine AS base
 # Install dependencies
 FROM base AS deps
 WORKDIR /app
-COPY package.json package-lock.json ./
-RUN npm cache clean --force && npm install --legacy-peer-deps --force
+COPY package.json ./
+RUN npm install --legacy-peer-deps
 
 # Build
 FROM base AS builder
