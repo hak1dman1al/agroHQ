@@ -10,7 +10,8 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
-import { signOut, useSession } from "@/lib/auth/client"
+import { signOut } from "@/lib/auth/client"
+import { useAuth } from "@/components/providers/auth-provider"
 import { useRouter } from "next/navigation"
 import { Menu, Search, LogOut, User, Settings } from "lucide-react"
 import { getInitials } from "@/lib/utils"
@@ -21,7 +22,7 @@ interface HeaderProps {
 }
 
 export function Header({ onMenuClick, title }: HeaderProps) {
-  const { data: session } = useSession()
+  const { session } = useAuth()
   const router = useRouter()
   const user = session?.user
 

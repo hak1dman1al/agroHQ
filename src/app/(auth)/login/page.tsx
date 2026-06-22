@@ -24,7 +24,7 @@ export default function LoginPage() {
     setLoading(true)
 
     try {
-      const result = await signIn.email({
+      const result = await signIn({
         email,
         password,
       })

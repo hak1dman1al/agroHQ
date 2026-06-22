@@ -47,7 +47,7 @@ export default function InvitePage() {
     setLoading(true)
 
     try {
-      const result = await signUp.email({
+      const result = await signUp({
         name,
         email,
         password,

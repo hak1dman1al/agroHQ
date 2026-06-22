@@ -1,7 +1,44 @@
-import { createAuthClient } from "better-auth/react"
+export async function signIn(credentials: { email: string; password: string }) {
+  const res = await fetch("/api/auth/sign-in/email", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(credentials),
+    credentials: "include",
+  })
+  
+  const data = await res.json()
+  
+  if (!res.ok) {
+    return { error: { message: data.message || "Sign in failed" }, data: null }
+  }
+  
+  return { error: null, data }
+}
 
-export const authClient = createAuthClient({
-  baseURL: process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000",
-})
+export async function signUp(credentials: { name: string; email: string; password: string }) {
+  const res = await fetch("/api/auth/sign-up/email", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(credentials),
+    credentials: "include",
+  })
+  
+  const data = await res.json()
+  
+  if (!res.ok) {
+    return { error: { message: data.message || "Sign up failed" }, data: null }
+  }
+  
+  return { error: null, data }
+}
 
-export const { signIn, signUp, signOut, useSession } = authClient
+export async function signOut() {
+  const res = await fetch("/api/auth/sign-out", {
+    method: "POST",
+    credentials: "include",
+  })
+  
+  if (!res.ok) {
+    console.error("Sign out failed")
+  }
+}
