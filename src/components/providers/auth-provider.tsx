@@ -1,7 +1,7 @@
 "use client"
 
-import { SessionProvider } from "better-auth/react"
+import { AuthProvider as BetterAuthProvider } from "@/components/providers/auth-provider-wrapper"
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
-  return <SessionProvider>{children}</SessionProvider>
+  return <BetterAuthProvider>{children}</BetterAuthProvider>
 }

@@ -1,9 +1,12 @@
 import { Client } from "minio"
 
+const endpoint = process.env.MINIO_ENDPOINT || "http://localhost:9000"
+const url = new URL(endpoint)
+
 const minioClient = new Client({
-  endPoint: process.env.MINIO_ENDPOINT?.replace(/https?:\/\//, "") || "localhost",
-  port: parseInt(process.env.MINIO_ENDPOINT?.split(":").pop() || "9000"),
-  useSSL: process.env.MINIO_ENDPOINT?.startsWith("https") || false,
+  endPoint: url.hostname,
+  port: parseInt(url.port) || (url.protocol === "https:" ? 443 : 9000),
+  useSSL: url.protocol === "https:",
   accessKey: process.env.MINIO_ACCESS_KEY || "minioadmin",
   secretKey: process.env.MINIO_SECRET_KEY || "minioadmin",
 })
